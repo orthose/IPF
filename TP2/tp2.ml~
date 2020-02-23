@@ -1,0 +1,2 @@
+let rec mult a b = if a = 1 then b else b + mult (a-1) b
+let () = Printf.printf "%d\n" mult 5 * 2                                              

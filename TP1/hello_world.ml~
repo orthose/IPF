@@ -1,0 +1,4 @@
+print_string "hello_world\n"
+let age = 20
+let () = Printf.printf "J'ai %d ans" age
+  

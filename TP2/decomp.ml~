@@ -1,0 +1,21 @@
+let decomp n =
+  let rec decomp bin n =
+    if n = 1 then "1"^bin
+    else if n mod 2 = 0 then decomp ("0"^bin) (n/2)
+    else decomp ("1"^bin) (n/2)
+  in
+  if n <= 0 then "0"
+  else decomp "" n
+
+let () =
+  Printf.printf "%s\n" (decomp 0);
+  Printf.printf "%s\n" (decomp 1);
+  Printf.printf "%s\n" (decomp 2);
+  Printf.printf "%s\n" (decomp 3);
+  Printf.printf "%s\n" (decomp 5);
+  Printf.printf "%s\n" (decomp 6);
+  Printf.printf "%s\n" (decomp 7);
+  Printf.printf "%s\n" (decomp 8);
+  Printf.printf "%s\n" (decomp 9);
+  Printf.printf "%s\n" (decomp 10);
+  Printf.printf "%s\n" (decomp 23)

@@ -59,7 +59,7 @@ let position_paddle () =
   else x
 
 (* Calcul de la vitesse en fonction position float:x de la balle
- et de sa vitesse float:vx sur l'axe des abscisses *)
+et de sa vitesse float:vx sur l'axe des abscisses *)
 let bounce_x x vx =
   if x -. left <= float_of_int ball || x +. float_of_int ball >= (right -. 1.) then -.vx
   else vx
@@ -71,6 +71,109 @@ let bounce_y x y vy p =
   if y +. float_of_int ball >= (up -. 1.) || (y -. float_of_int ball <= (down +. (float_of_int thick)) && float_of_int p <= x && x <= float_of_int (p + paddle))  then -.vy
   else vy
 
+(* Longueur d'une brique *)
+let brick_right = int_of_float (right /. 10.)
+
+(* Epaisseur d'une brique *)
+let brick_up = int_of_float (up /. 50.)
+
+(* Nombre de colones de briques *)
+let brick_column = int_of_float (right /. float_of_int brick_right)
+
+(* Nombre de lignes de briques *)
+let brick_lines = 5
+
+(* Coordonnée x de la première brique *)
+let first_brick_x = 0.
+
+(* Coordonnée y de la première brique *)
+let first_brick_y = up /. 3.
+                  
+(* Résistance d'une brique *)
+let brick_resistance = 3
+             
+(* Initialise la matrice de briques *)
+let init_brick () =
+  make_matrix brick_column brick_lines brick_resistance
+
+(* Dessine toutes les briques selon la matrice *)
+let draw_brickss bricks =
+  (* Affichage d'une brique simple à la position (x,y) *)
+  let draw_brick x y =
+    Graphics.fill_rect x y brick_right brick_up
+  in
+  (* Parcours de toutes les briques et affichage *)
+  let rec draw_bricks i j =
+    if i < brick_lines then (
+      if j < brick_column then (
+        (* Couleur calculée à partir résitance brique *)
+        let color = Graphics.rgb (float_of_int bricks.(i).(j) *. (255. /. float_of_int brick_resistance)) 0 0 in
+        Graphics.set_color color;
+        draw_brick ((j * brick_right) + int_of_float first_brick_x) ((i * brick_up) + int_of_float first_brick_y);
+        draw_bricks i (j+1)
+      ) 
+      else draw_bricks (i+1) 0
+    )
+  in
+  draw_bricks 0 0
+(*
+(* Distance euclidienne entre deux points (a,b) et (c,d) *)
+let distance a b c d = sqrt ( (a -. c) *. (a -. c) +. (b -. d) *. (b -. d) )
+
+(* Récupère les briques les plus proches de la balle (float:x,float:y)
+selon la matrice de briques et renvoie un vector de format
+close_bricks = [|[|brick_x;brick_y;brick_resistance|];...|] *)
+let pick_close_bricks x y bricks =
+  (* Parcours de toutes les briques *)
+  let rec pick_close_bricks i j index distance_bricks =*)
+    
+
+(* Renvoie true si la balle (float:x,float:y) touche la brique spécifiée
+au format [|float:brick_x;float:brick_y;int:brick_resistance|] *)
+let reaches_brick x y brick =
+  (* Borne inférieure abscisse balle *)
+  let ball_x_inf = x -. float_of_int ball in
+  (* Borne supérieure abscisse balle *)
+  let ball_x_sup = x +. float_of_int ball in
+  (* Borne inférieure ordonnée balle *)
+  let ball_y_inf = y -. float_of_int ball in
+  (*Borne supérieure ordonnée balle *)
+  let ball_y_sup = y +. float_of_int ball in
+  (* Tests des 4 aretes de la brique *)
+  ((brick.(0) <= ball_x_inf && ball_x_inf <= brick.(0) +. brick_right || ) && ) ||
+  ()
+  ()
+  ()
+
+(* Mets à jour la matrice de briques selon la position courante
+(float:x,float:y) de la balle et la matrice actuelle *)
+let update_bricks x y bricks =
+  (* Récupération des briques les plus proches de la balle*)
+  let close_bricks = pick_close_bricks x y bricks in
+  (* Parcours de toutes les briques *)
+  let rec update_bricks i j close_bricks =
+    if i < brick_lines then (
+      if j < brick_column then ( 
+        ...;
+        update_bricks i (j+1)
+      ) 
+      else update_bricks (i+1) 0
+    )
+    else bricks
+  in
+  update_bricks 0 0 close_bricks
+
+(* Calcul de la vitesse en fonction position float:x de la balle
+et de sa vitesse float:vx sur l'axe des abscisses pour un rebond
+éventuel sur une brique. 
+close_bricks = [|[|brick_x;brick_y;brick_resistance|];...|] *)
+let bounce_brick_x x vx close_bricks = ...
+  
+(* Calcul de la vitesse en fonction de la position (float:x,float:y)
+de la balle, de la vitesse float:vy pour un rebond éventuel sur une
+brique. close_bricks = [|[|brick_x;brick_y;brick_resistance|];...|] *)
+let bounce_brick_y x y vy close_bricks = ...
+  
 (* Vérifie si le jeu est perdu *)
 let is_lost x y = y <= 0.
                 

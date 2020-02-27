@@ -126,7 +126,10 @@ close_bricks = [|[|brick_x;brick_y;brick_resistance|];...|] *)
 let pick_close_bricks x y bricks =
   (* Parcours de toutes les briques *)
   let rec pick_close_bricks i j index distance_bricks =*)
-    
+
+(* Intervalle distance de la balle avec brique *)
+let distance_min = 0.0
+let distance_max = 0.5
 
 (* Renvoie true si la balle (float:x,float:y) touche la brique spécifiée
 au format [|float:brick_x;float:brick_y;int:brick_resistance|] *)
@@ -139,11 +142,20 @@ let reaches_brick x y brick =
   let ball_y_inf = y -. float_of_int ball in
   (*Borne supérieure ordonnée balle *)
   let ball_y_sup = y +. float_of_int ball in
-  (* Tests des 4 aretes de la brique *)
-  ((brick.(0) <= ball_x_inf && ball_x_inf <= brick.(0) +. brick_right || ) && ) ||
-  ()
-  ()
-  ()
+  (* Tests des 4 aretes de la brique si brique pas cassée *)
+  brick.(2) > 0 &&
+  (
+    (
+      ((brick.(0) <= ball_x_inf && ball_x_inf <= brick.(0) +. brick_right) ||
+       (brick.(0) <= ball_x_sup && ball_x_sup <= brick.(0) +. brick_right)) &&
+      ((distance_min <= brick.(1) -. ball_y_sup && brick.(1) -. ball_y_sup <= distance_max) ||
+       (distance_min <= ball_y_inf -. brick.(1) +. brick_up && ball_y_inf -. brick.(1) +. brick_up <= distance_max))
+    ) ||
+      ((brick.(1) <= ball_y_inf && ball_y_inf <= brick.(1) +. brick_up) ||
+       (brick.(1) <= ball_y_sup && ball_y_sup <= brick.(1) +. brick_up)) &&
+      ((distance_min <= brick.(0) -. ball_x_sup && brick.(0) -. ball_x_sup <= distance_max) ||
+       (distance_min <= ball_x_inf -. brick.(0) +. brick_right && ball_x_inf -. brick.(0) +. brick_right <= distance_max))
+  )
 
 (* Mets à jour la matrice de briques selon la position courante
 (float:x,float:y) de la balle et la matrice actuelle *)

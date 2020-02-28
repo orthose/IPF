@@ -91,6 +91,9 @@ let first_brick_y = up /. 3.
                   
 (* Résistance d'une brique *)
 let brick_resistance = 3
+
+(* Structure représentant une brique simple *)
+type brick = {brick_x:float ; brick_y:float ; brick_resistance:int}
              
 (* Initialise la matrice de briques *)
 let init_brick () =
@@ -116,23 +119,17 @@ let draw_brickss bricks =
     )
   in
   draw_bricks 0 0
-(*
-(* Distance euclidienne entre deux points (a,b) et (c,d) *)
-let distance a b c d = sqrt ( (a -. c) *. (a -. c) +. (b -. d) *. (b -. d) )
-
-(* Récupère les briques les plus proches de la balle (float:x,float:y)
-selon la matrice de briques et renvoie un vector de format
-close_bricks = [|[|brick_x;brick_y;brick_resistance|];...|] *)
-let pick_close_bricks x y bricks =
-  (* Parcours de toutes les briques *)
-  let rec pick_close_bricks i j index distance_bricks =*)
 
 (* Intervalle distance de la balle avec brique *)
 let distance_min = 0.0
 let distance_max = 0.5
 
-(* Renvoie true si la balle (float:x,float:y) touche la brique spécifiée
-au format [|float:brick_x;float:brick_y;int:brick_resistance|] *)
+(* Côté de l'impact de la balle avec la brique *)
+type side = Vertical | Horizontal | NoneSide
+                 
+(* Renvoie (impact:bool,côté:side) avec impact true si la balle (float:x,float:y)
+touche la brique spécifiée au format {brick_x:float;brick_y:float;brick_resistance:int}
+et horizontal true si l'impact a lieu sur la partie horizontale de la brique *)
 let reaches_brick x y brick =
   (* Borne inférieure abscisse balle *)
   let ball_x_inf = x -. float_of_int ball in
@@ -142,28 +139,31 @@ let reaches_brick x y brick =
   let ball_y_inf = y -. float_of_int ball in
   (*Borne supérieure ordonnée balle *)
   let ball_y_sup = y +. float_of_int ball in
+  
   (* Tests des 4 aretes de la brique si brique pas cassée *)
-  brick.(2) > 0 &&
-  (
-    (
-      ((brick.(0) <= ball_x_inf && ball_x_inf <= brick.(0) +. brick_right) ||
-       (brick.(0) <= ball_x_sup && ball_x_sup <= brick.(0) +. brick_right)) &&
-      ((distance_min <= brick.(1) -. ball_y_sup && brick.(1) -. ball_y_sup <= distance_max) ||
-       (distance_min <= ball_y_inf -. brick.(1) +. brick_up && ball_y_inf -. brick.(1) +. brick_up <= distance_max))
-    ) ||
-      ((brick.(1) <= ball_y_inf && ball_y_inf <= brick.(1) +. brick_up) ||
-       (brick.(1) <= ball_y_sup && ball_y_sup <= brick.(1) +. brick_up)) &&
-      ((distance_min <= brick.(0) -. ball_x_sup && brick.(0) -. ball_x_sup <= distance_max) ||
-       (distance_min <= ball_x_inf -. brick.(0) +. brick_right && ball_x_inf -. brick.(0) +. brick_right <= distance_max))
-  )
+  if brick.brick_resistance > 0 &&
+     ((brick.brick_x <= ball_x_inf && ball_x_inf <= brick.brick_x +. brick_right) ||
+      (brick.brick_x <= ball_x_sup && ball_x_sup <= brick.brick_x +. brick_right)) &&
+     ((distance_min <= brick.brick_y -. ball_y_sup && brick.brick_y -. ball_y_sup <= distance_max) ||
+      (distance_min <= ball_y_inf -. brick.brick_y +. brick_up && ball_y_inf -. brick.brick_y +. brick_up <= distance_max))
+     then (true, Horizontal)
+
+   else if brick.brick_resistance > 0 &&
+      ((brick.brick_y <= ball_y_inf && ball_y_inf <= brick.brick_y +. brick_up) ||
+       (brick.brick_y <= ball_y_sup && ball_y_sup <= brick.brick_y +. brick_up)) &&
+      ((distance_min <= brick.brick_x -. ball_x_sup && brick.brick_x -. ball_x_sup <= distance_max) ||
+       (distance_min <= ball_x_inf -. brick.brick_x +. brick_right && ball_x_inf -. brick.brick_x +. brick_right <= distance_max))
+     then (true, Vertical)
+  else (false, NoneSide)
 
 (* Mets à jour la matrice de briques selon la position courante
-(float:x,float:y) de la balle et la matrice actuelle *)
+(float:x,float:y) de la balle et la matrice actuelle
+Renvoie (bricks, impact) *)
 let update_bricks x y bricks =
   (* Récupération des briques les plus proches de la balle*)
   let close_bricks = pick_close_bricks x y bricks in
   (* Parcours de toutes les briques *)
-  let rec update_bricks i j close_bricks =
+  let rec update_bricks i j bricks =
     if i < brick_lines then (
       if j < brick_column then ( 
         ...;
@@ -175,16 +175,27 @@ let update_bricks x y bricks =
   in
   update_bricks 0 0 close_bricks
 
-(* Calcul de la vitesse en fonction position float:x de la balle
-et de sa vitesse float:vx sur l'axe des abscisses pour un rebond
-éventuel sur une brique. 
-close_bricks = [|[|brick_x;brick_y;brick_resistance|];...|] *)
-let bounce_brick_x x vx close_bricks = ...
+(* Calcul de la vitesse sur l'axe des abscisses pour
+un rebond éventuel sur une brique donnée par impact. *)
+let bounce_brick_x vx impact =
+  let (collision, side) = impact in
+  if collision then
+    match side with
+    | Vertical -> -.vx
+    | Horizontal -> -.vx
+    | NoneSide -> vx
+  else vx
   
-(* Calcul de la vitesse en fonction de la position (float:x,float:y)
-de la balle, de la vitesse float:vy pour un rebond éventuel sur une
-brique. close_bricks = [|[|brick_x;brick_y;brick_resistance|];...|] *)
-let bounce_brick_y x y vy close_bricks = ...
+(* Calcul de la vitesse sur l'axe des ordonnées pour
+un rebond éventuel sur une brique donné par impact. *)
+let bounce_brick_y vy impact =
+  let (collision, side) = impact in
+  if collision then
+    match side with
+    | Vertical -> vy
+    | Horizontal -> -.vy
+    | NoneSide -> vy
+  else vy
   
 (* Vérifie si le jeu est perdu *)
 let is_lost x y = y <= 0.

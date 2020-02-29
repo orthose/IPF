@@ -95,30 +95,38 @@ let brick_resistance = 3
 (* Structure représentant une brique simple *)
 type brick = {brick_x:float ; brick_y:float ; brick_resistance:int}
              
-(* Initialise la matrice de briques *)
+(* Initialise la liste de briques *)
 let init_brick () =
-  make_matrix brick_column brick_lines brick_resistance
+  let rec init_brick i j liste =
+    if i < brick_lines then (
+      if j < brick_column then (
+        (* Calcul des coordonnées de la brique *)
+        let brick = { brick_x = first_brick_x +. float_of_int j *. brick_right ;
+                      brick_y = first_brick_y +. float_of_int i *. brick_up ;
+                      brick_resistance = 2 } in
+        init_brick i (j+1) liste::brick
+      )
+      else init_brick (i+1) 0
+    )
+    else liste
+  in
+  init_brick 0 0 []
 
-(* Dessine toutes les briques selon la matrice *)
-let draw_brickss bricks =
+(* Dessine toutes les briques selon la liste *)
+let rec draw_bricks bricks =
   (* Affichage d'une brique simple à la position (x,y) *)
   let draw_brick x y =
     Graphics.fill_rect x y brick_right brick_up
   in
   (* Parcours de toutes les briques et affichage *)
-  let rec draw_bricks i j =
-    if i < brick_lines then (
-      if j < brick_column then (
-        (* Couleur calculée à partir résitance brique *)
-        let color = Graphics.rgb (float_of_int bricks.(i).(j) *. (255. /. float_of_int brick_resistance)) 0 0 in
-        Graphics.set_color color;
-        draw_brick ((j * brick_right) + int_of_float first_brick_x) ((i * brick_up) + int_of_float first_brick_y);
-        draw_bricks i (j+1)
-      ) 
-      else draw_bricks (i+1) 0
-    )
-  in
-  draw_bricks 0 0
+  let a::b = bricks in
+  let { brick_x = x ; brick_y = y brick_resistance = r } = a in
+  (* Couleur calculée à partir résitance brique *)
+  let color = Graphics.rgb (float_of_int r *. (255. /. float_of_int r)) 0 0 in
+  Graphics.set_color color;
+  (* Affichage de la brique courante *)
+  draw_brick x y;
+  if b != [] then draw_bricks b
 
 (* Intervalle distance de la balle avec brique *)
 let distance_min = 0.0
@@ -157,23 +165,14 @@ let reaches_brick x y brick =
   else (false, NoneSide)
 
 (* Mets à jour la matrice de briques selon la position courante
-(float:x,float:y) de la balle et la matrice actuelle
+(float:x,float:y) de la balle et la liste actuelle
 Renvoie (bricks, impact) *)
 let update_bricks x y bricks =
-  (* Récupération des briques les plus proches de la balle*)
-  let close_bricks = pick_close_bricks x y bricks in
   (* Parcours de toutes les briques *)
-  let rec update_bricks i j bricks =
-    if i < brick_lines then (
-      if j < brick_column then ( 
-        ...;
-        update_bricks i (j+1)
-      ) 
-      else update_bricks (i+1) 0
-    )
-    else bricks
+  let rec update_bricks bricks =
+    ...
   in
-  update_bricks 0 0 close_bricks
+  update_bricks bricks
 
 (* Calcul de la vitesse sur l'axe des abscisses pour
 un rebond éventuel sur une brique donnée par impact. *)

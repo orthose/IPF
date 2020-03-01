@@ -72,13 +72,13 @@ let bounce_y x y vy p =
   else vy
 
 (* Longueur d'une brique *)
-let brick_right = int_of_float (right /. 10.)
+let brick_right = right /. 10.
 
 (* Epaisseur d'une brique *)
-let brick_up = int_of_float (up /. 50.)
+let brick_up = up /. 50.
 
 (* Nombre de colones de briques *)
-let brick_column = int_of_float (right /. float_of_int brick_right)
+let brick_column = int_of_float (right /. brick_right)
 
 (* Nombre de lignes de briques *)
 let brick_lines = 5
@@ -104,9 +104,9 @@ let init_brick () =
         let brick = { brick_x = first_brick_x +. float_of_int j *. brick_right ;
                       brick_y = first_brick_y +. float_of_int i *. brick_up ;
                       brick_resistance = 2 } in
-        init_brick i (j+1) liste::brick
+        init_brick i (j+1) liste@[brick]
       )
-      else init_brick (i+1) 0
+      else init_brick (i+1) 0 liste
     )
     else liste
   in
@@ -116,16 +116,16 @@ let init_brick () =
 let rec draw_bricks bricks =
   (* Affichage d'une brique simple à la position (x,y) *)
   let draw_brick x y =
-    Graphics.fill_rect x y brick_right brick_up
+    Graphics.fill_rect x y (int_of_float brick_right) (int_of_float brick_up)
   in
   (* Parcours de toutes les briques et affichage *)
   let a::b = bricks in
-  let { brick_x = x ; brick_y = y brick_resistance = r } = a in
+  let { brick_x = x ; brick_y = y ; brick_resistance = r } = a in
   (* Couleur calculée à partir résitance brique *)
-  let color = Graphics.rgb (float_of_int r *. (255. /. float_of_int r)) 0 0 in
+  let color = Graphics.rgb (int_of_float (float_of_int r *. (255. /. float_of_int r))) 0 0 in
   Graphics.set_color color;
   (* Affichage de la brique courante *)
-  draw_brick x y;
+  draw_brick (int_of_float x) (int_of_float y);
   if b != [] then draw_bricks b
 
 (* Intervalle distance de la balle avec brique *)
@@ -138,6 +138,7 @@ type side = Vertical | Horizontal | NoneSide
 (* Renvoie le side de l'impact et la valeur NoneSide si la balle (float:x,float:y) ne touche pas
 la brique spécifiée au format {brick_x:float;brick_y:float;brick_resistance:int} *)
 let reaches_brick x y brick =
+  
   (* Borne inférieure abscisse balle *)
   let ball_x_inf = x -. float_of_int ball in
   (* Borne supérieure abscisse balle *)
@@ -148,34 +149,42 @@ let reaches_brick x y brick =
   let ball_y_sup = y +. float_of_int ball in
   
   (* Tests des 4 aretes de la brique si brique pas cassée *)
+
+  (* Côté horizontal haut et bas *)
   if brick.brick_resistance > 0 &&
      ((brick.brick_x <= ball_x_inf && ball_x_inf <= brick.brick_x +. brick_right) ||
       (brick.brick_x <= ball_x_sup && ball_x_sup <= brick.brick_x +. brick_right)) &&
      ((distance_min <= brick.brick_y -. ball_y_sup && brick.brick_y -. ball_y_sup <= distance_max) ||
       (distance_min <= ball_y_inf -. brick.brick_y +. brick_up && ball_y_inf -. brick.brick_y +. brick_up <= distance_max))
      then Horizontal
-
+         
+   (* Côté vertical haut et bas *) 
    else if brick.brick_resistance > 0 &&
       ((brick.brick_y <= ball_y_inf && ball_y_inf <= brick.brick_y +. brick_up) ||
        (brick.brick_y <= ball_y_sup && ball_y_sup <= brick.brick_y +. brick_up)) &&
       ((distance_min <= brick.brick_x -. ball_x_sup && brick.brick_x -. ball_x_sup <= distance_max) ||
        (distance_min <= ball_x_inf -. brick.brick_x +. brick_right && ball_x_inf -. brick.brick_x +. brick_right <= distance_max))
-     then Vertical
+      then Vertical
+
+  (* Aucune face touchée *)
   else NoneSide
 
-(* Mets à jour la matrice de briques selon la position courante
+(* Mets à jour la liste de briques selon la position courante
 (float:x,float:y) de la balle et la liste actuelle.
 Renvoie (bricks, side). Une seule brique au maximum peut être
 touchée par la balle. *)
 let update_bricks x y bricks =
   (* Parcours de toutes les briques *)
   let rec update_bricks bricks new_bricks =
-    match brick with
-    | [] -> new_bricks
+    match bricks with
+    | [] -> (new_bricks, NoneSide)
     | a::b ->
+       (* Calcul d'un éventuel impact *)
        let impact = reaches_brick x y a in
-       if impact = NoneSide then update_bricks b new_bricks@a
-       else (new_bricks@a@b, impact)
+       (* Recherche d'une autre brique touchée *)
+       if impact = NoneSide then update_bricks b (new_bricks@[a])
+       (* On s'arrête car une brique a été touchée *)
+       else (new_bricks@{a with brick_resistance = a.brick_resistance - 1}::b, impact)
   in
   update_bricks bricks []
 

@@ -135,9 +135,8 @@ let distance_max = 0.5
 (* Côté de l'impact de la balle avec la brique *)
 type side = Vertical | Horizontal | NoneSide
                  
-(* Renvoie (impact:bool,côté:side) avec impact true si la balle (float:x,float:y)
-touche la brique spécifiée au format {brick_x:float;brick_y:float;brick_resistance:int}
-et horizontal true si l'impact a lieu sur la partie horizontale de la brique *)
+(* Renvoie le side de l'impact et la valeur NoneSide si la balle (float:x,float:y) ne touche pas
+la brique spécifiée au format {brick_x:float;brick_y:float;brick_resistance:int} *)
 let reaches_brick x y brick =
   (* Borne inférieure abscisse balle *)
   let ball_x_inf = x -. float_of_int ball in
@@ -154,19 +153,20 @@ let reaches_brick x y brick =
       (brick.brick_x <= ball_x_sup && ball_x_sup <= brick.brick_x +. brick_right)) &&
      ((distance_min <= brick.brick_y -. ball_y_sup && brick.brick_y -. ball_y_sup <= distance_max) ||
       (distance_min <= ball_y_inf -. brick.brick_y +. brick_up && ball_y_inf -. brick.brick_y +. brick_up <= distance_max))
-     then (true, Horizontal)
+     then Horizontal
 
    else if brick.brick_resistance > 0 &&
       ((brick.brick_y <= ball_y_inf && ball_y_inf <= brick.brick_y +. brick_up) ||
        (brick.brick_y <= ball_y_sup && ball_y_sup <= brick.brick_y +. brick_up)) &&
       ((distance_min <= brick.brick_x -. ball_x_sup && brick.brick_x -. ball_x_sup <= distance_max) ||
        (distance_min <= ball_x_inf -. brick.brick_x +. brick_right && ball_x_inf -. brick.brick_x +. brick_right <= distance_max))
-     then (true, Vertical)
-  else (false, NoneSide)
+     then Vertical
+  else NoneSide
 
 (* Mets à jour la matrice de briques selon la position courante
-(float:x,float:y) de la balle et la liste actuelle
-Renvoie (bricks, impact) *)
+(float:x,float:y) de la balle et la liste actuelle.
+Renvoie (bricks, side). Une seule brique au maximum peut être
+touchée par la balle. *)
 let update_bricks x y bricks =
   (* Parcours de toutes les briques *)
   let rec update_bricks bricks =
@@ -175,26 +175,20 @@ let update_bricks x y bricks =
   update_bricks bricks
 
 (* Calcul de la vitesse sur l'axe des abscisses pour
-un rebond éventuel sur une brique donnée par impact. *)
-let bounce_brick_x vx impact =
-  let (collision, side) = impact in
-  if collision then
-    match side with
-    | Vertical -> -.vx
-    | Horizontal -> -.vx
-    | NoneSide -> vx
-  else vx
+un rebond éventuel sur une brique donnée par le side. *)
+let bounce_brick_x vx side =
+  match side with
+  | Vertical -> -.vx
+  | Horizontal -> -.vx
+  | NoneSide -> vx
   
 (* Calcul de la vitesse sur l'axe des ordonnées pour
-un rebond éventuel sur une brique donné par impact. *)
-let bounce_brick_y vy impact =
-  let (collision, side) = impact in
-  if collision then
-    match side with
-    | Vertical -> vy
-    | Horizontal -> -.vy
-    | NoneSide -> vy
-  else vy
+un rebond éventuel sur une brique donné par le side. *)
+let bounce_brick_y vy side =
+  match side with
+  | Vertical -> vy
+  | Horizontal -> -.vy
+  | NoneSide -> vy
   
 (* Vérifie si le jeu est perdu *)
 let is_lost x y = y <= 0.

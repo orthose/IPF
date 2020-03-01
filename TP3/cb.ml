@@ -103,7 +103,7 @@ let init_bricks () =
         (* Calcul des coordonnées de la brique *)
         let brick = { brick_x = first_brick_x +. float_of_int j *. brick_right ;
                       brick_y = first_brick_y +. float_of_int i *. brick_up ;
-                      brick_resistance = 2 } in
+                      brick_resistance = brick_resistance } in
         init_bricks i (j+1) liste@[brick]
       )
       else init_bricks (i+1) 0 liste
@@ -138,7 +138,7 @@ let rec draw_bricks bricks =
   let { brick_x = x ; brick_y = y ; brick_resistance = r } = a in
   (* Couleur calculée à partir résitance brique *)
   let color = if r = 0 then Graphics.rgb 255 255 255
-              else Graphics.rgb (int_of_float (255. /. float_of_int r)) 25 25 in
+              else Graphics.rgb (255 - int_of_float ((float_of_int brick_resistance -. float_of_int r) *. (255. /. float_of_int brick_resistance))) 10 10 in
   Graphics.set_color color;
   (* Affichage de la brique courante *)
   draw_area_brick (int_of_float x) (int_of_float y);

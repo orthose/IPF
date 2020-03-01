@@ -96,21 +96,21 @@ let brick_resistance = 3
 type brick = {brick_x:float ; brick_y:float ; brick_resistance:int}
              
 (* Initialise la liste de briques *)
-let init_brick () =
-  let rec init_brick i j liste =
+let init_bricks () =
+  let rec init_bricks i j liste =
     if i < brick_lines then (
       if j < brick_column then (
         (* Calcul des coordonnées de la brique *)
         let brick = { brick_x = first_brick_x +. float_of_int j *. brick_right ;
                       brick_y = first_brick_y +. float_of_int i *. brick_up ;
                       brick_resistance = 2 } in
-        init_brick i (j+1) liste@[brick]
+        init_bricks i (j+1) liste@[brick]
       )
-      else init_brick (i+1) 0 liste
+      else init_bricks (i+1) 0 liste
     )
     else liste
   in
-  init_brick 0 0 []
+  init_bricks 0 0 []
 
 (* Dessine toutes les briques selon la liste *)
 let rec draw_bricks bricks =
@@ -210,34 +210,48 @@ let is_lost x y = y <= 0.
 (* Boucle principale *)
 let game () =
   (* (float:x,float:y) position de la balle
-     (float:vx,float:vy) vitesse de la balle *)
-  let rec game x y vx vy =
+     (float:vx,float:vy) vitesse de la balle
+     [{brick};...]:bricks liste de briques
+     (int:score) à incrémenter pour chaque impact *)
+  let rec game x y vx vy bricks score =
     Printf.printf "(x=%f;y=%f)\n" x y;
     Printf.printf "(vx=%f;vy=%f)\n" vx vy;
+    Printf.printf "(score=%d)\n" score;
     (* Efface la frame précédente *)
     Graphics.clear_graph ();
     (* Affichage de la balle *)
     draw_ball x y;
     (* Affichage de la raquette *)
     draw_paddle (float_of_int(position_paddle ()));
+    (* Affichage de la liste de briques *)
+    draw_bricks bricks;
     (* Synchronisation de l'affichage *)
     Graphics.synchronize ();
-    (* Effets sur la balle *)
+    (* Effets sur la balle tant que le jeu n'est pas perdu *)
     if not (is_lost x y) then
-      (* Calcul du rebond *)
+      (* Calcul du rebond raquette et bordures *)
       let vx = bounce_x x vx in
       let vy = bounce_y x y vy (position_paddle ()) in
+      (* Mise à jour de la liste de briques *)
+      let (bricks, side) = update_bricks x y bricks in
+      (* Incrémentation du score *)
+      let score = if side != NoneSide then score + 1 else score in
+      (* Calcul du rebond sur brique qui est prioritaire sur le rebond précédent *)
+      let vx = bounce_brick_x vx side in
+      let vy = bounce_brick_y vy side in
       (* Calcul de la position de la balle *)
       let x = new_position_x x vx in
       let y = new_position_y y vy in
+      
+      (* Vitesse des frames *)
+      Unix.sleepf 0.003;
       (* Appel récursif *)
-      Unix.sleepf 0.003; (* Vitesse des frames *)
-      game x y vx vy
+      game x y vx vy bricks score
   in
   (* Initialisation du jeu *)
   let p = position_paddle () in
   (* La balle est initialisée sur la raquette et part vers le haut *)
-  game (float_of_int (p + paddle) /. 2.) (down +. float_of_int thick +. float_of_int ball +. 1.0) vx (abs_float vy)
+  game (float_of_int (p + paddle) /. 2.) (down +. float_of_int thick +. float_of_int ball +. 1.0) vx (abs_float vy) (init_bricks ()) 0
   
 (* Lancement du jeu *)
 let () = game ()

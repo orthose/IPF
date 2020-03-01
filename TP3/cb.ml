@@ -75,13 +75,13 @@ let bounce_y x y vy p =
 let brick_right = right /. 10.
 
 (* Epaisseur d'une brique *)
-let brick_up = up /. 50.
+let brick_up = up /. 30.
 
 (* Nombre de colones de briques *)
 let brick_column = int_of_float (right /. brick_right)
 
 (* Nombre de lignes de briques *)
-let brick_lines = 5
+let brick_lines = 15
 
 (* Coordonnée x de la première brique *)
 let first_brick_x = 0.
@@ -115,17 +115,37 @@ let init_bricks () =
 (* Dessine toutes les briques selon la liste *)
 let rec draw_bricks bricks =
   (* Affichage d'une brique simple à la position (x,y) *)
-  let draw_brick x y =
-    Graphics.fill_rect x y (int_of_float brick_right) (int_of_float brick_up)
+  let draw_area_brick x y =
+    Graphics.fill_rect x y (int_of_float brick_right) (int_of_float brick_up);
+  in
+  (* Trace la bordure du rectangle *)
+  let draw_border_brick x y =
+    (* Epaisseur de la bordure *)
+    Graphics.set_line_width 1;
+    (* Point bas gauche *)
+    Graphics.moveto x y;
+    Graphics.lineto (x + (int_of_float brick_right)) y;
+    Graphics.moveto x y;
+    Graphics.lineto x (y + (int_of_float brick_up));
+    (* Point haut droite *)
+    Graphics.moveto (x + (int_of_float brick_right)) (y + (int_of_float brick_up));
+    Graphics.lineto (x + (int_of_float brick_right)) y;
+    Graphics.moveto (x + (int_of_float brick_right)) (y + (int_of_float brick_up)) ;
+    Graphics.lineto x (y + (int_of_float brick_up))
   in
   (* Parcours de toutes les briques et affichage *)
   let a::b = bricks in
   let { brick_x = x ; brick_y = y ; brick_resistance = r } = a in
   (* Couleur calculée à partir résitance brique *)
-  let color = Graphics.rgb (int_of_float (float_of_int r *. (255. /. float_of_int r))) 0 0 in
+  let color = if r = 0 then Graphics.rgb 255 255 255
+              else Graphics.rgb (int_of_float (255. /. float_of_int r)) 25 25 in
   Graphics.set_color color;
   (* Affichage de la brique courante *)
-  draw_brick (int_of_float x) (int_of_float y);
+  draw_area_brick (int_of_float x) (int_of_float y);
+  (* Bordure noire ou blanche en fonction résistance *)
+  if r > 0 then Graphics.set_color (Graphics.rgb 0 0 0)
+  else (Graphics.set_color (Graphics.rgb 255 255 255));
+  draw_border_brick (int_of_float x) (int_of_float y);
   if b != [] then draw_bricks b
 
 (* Intervalle distance de la balle avec brique *)
@@ -158,7 +178,7 @@ let reaches_brick x y brick =
       (distance_min <= ball_y_inf -. brick.brick_y +. brick_up && ball_y_inf -. brick.brick_y +. brick_up <= distance_max))
      then Horizontal
          
-   (* Côté vertical haut et bas *) 
+   (* Côté vertical gauche et droite *) 
    else if brick.brick_resistance > 0 &&
       ((brick.brick_y <= ball_y_inf && ball_y_inf <= brick.brick_y +. brick_up) ||
        (brick.brick_y <= ball_y_sup && ball_y_sup <= brick.brick_y +. brick_up)) &&
@@ -206,6 +226,18 @@ let bounce_brick_y vy side =
   
 (* Vérifie si le jeu est perdu *)
 let is_lost x y = y <= 0.
+
+(* Affiche le score *)
+let draw_score score =
+  (* Conversion du score *)
+  let score = "SCORE = " ^ string_of_int score in
+  (* Affichage en noir bien visible *)
+  Graphics.set_color (Graphics.rgb 0 0 0);
+  Graphics.set_text_size 20; (* Dommage pas implémentée *)
+  let (_, y) = text_size score in
+  (* Point gauche haut de la fenêtre *)
+  Graphics.moveto 0 (int_of_float up - y);
+  Graphics.draw_string score
                 
 (* Boucle principale *)
 let game () =
@@ -217,16 +249,23 @@ let game () =
     Printf.printf "(x=%f;y=%f)\n" x y;
     Printf.printf "(vx=%f;vy=%f)\n" vx vy;
     Printf.printf "(score=%d)\n" score;
+    
     (* Efface la frame précédente *)
     Graphics.clear_graph ();
-    (* Affichage de la balle *)
-    draw_ball x y;
+
+    (* Attention l'ordre des affichages est important *)
+    
     (* Affichage de la raquette *)
     draw_paddle (float_of_int(position_paddle ()));
     (* Affichage de la liste de briques *)
     draw_bricks bricks;
+    (* Affichage de la balle *)
+    draw_ball x y;
+    (* Affichage du score *)
+    draw_score score;
     (* Synchronisation de l'affichage *)
     Graphics.synchronize ();
+    
     (* Effets sur la balle tant que le jeu n'est pas perdu *)
     if not (is_lost x y) then
       (* Calcul du rebond raquette et bordures *)
@@ -244,7 +283,7 @@ let game () =
       let y = new_position_y y vy in
       
       (* Vitesse des frames *)
-      Unix.sleepf 0.003;
+      Unix.sleepf 0.001;
       (* Appel récursif *)
       game x y vx vy bricks score
   in

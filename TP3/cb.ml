@@ -169,10 +169,15 @@ Renvoie (bricks, side). Une seule brique au maximum peut être
 touchée par la balle. *)
 let update_bricks x y bricks =
   (* Parcours de toutes les briques *)
-  let rec update_bricks bricks =
-    ...
+  let rec update_bricks bricks new_bricks =
+    match brick with
+    | [] -> new_bricks
+    | a::b ->
+       let impact = reaches_brick x y a in
+       if impact = NoneSide then update_bricks b new_bricks@a
+       else (new_bricks@a@b, impact)
   in
-  update_bricks bricks
+  update_bricks bricks []
 
 (* Calcul de la vitesse sur l'axe des abscisses pour
 un rebond éventuel sur une brique donnée par le side. *)

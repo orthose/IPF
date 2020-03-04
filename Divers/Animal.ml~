@@ -1,0 +1,65 @@
+(* Code fonctionnel imitant du code objet *)
+
+(* Déclaration des types basiques *)
+type species = Chien | Chat
+type point = {x : int; y : int}
+
+(* Déclaration des attributs publics *)
+type public_animal = {
+    weight : int;
+    position : point
+}
+
+(* Déclaration des attributs privés *)
+type private_animal = {
+    speed : float;
+    kind : species
+}
+
+(* Concaténation des attributs publics et privés *)
+type animal = {
+    public_attributes : public_animal;
+    private_attributes : private_animal
+}
+
+(* Constructeur de classe *)
+let animal kind =
+    {   
+        { weight = 
+           ( match kind with
+            | Chien -> 10
+            | Chat -> 5
+           );
+          position = {x=0;y=0}
+        };
+        
+        { speed = 0.;
+          kind = kind
+        }
+    }
+    
+(* Getters *)
+let getWeight animal = animal.public_attributes.weight
+
+let getPosition animal = animal.public_attributes.position
+
+let getSpeed animal = animal.private_attributes.speed
+
+let getKind animal = animal.private_attributes.kind
+
+(* Setters *)
+let setWeight animal weight = {animal with public_attributes.weight = weight}
+
+(* Tests *)
+let mon_chat = animal Chat
+
+
+
+
+
+
+
+
+
+
+                

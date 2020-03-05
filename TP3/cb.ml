@@ -45,7 +45,7 @@ let draw_ball x y =
   Graphics.fill_circle (int_of_float x) (int_of_float y) ball
 
 (* Longueur de la raquette *)
-let paddle = 30
+let paddle = 35
 (* Epaisseur de la raquette *)
 let thick = 10
 
@@ -61,17 +61,26 @@ let position_paddle () =
   else if x + paddle > ((int_of_float right) - 1) then ((int_of_float right) - 1) - paddle
   else x
 
-(* Calcul de la vitesse en fonction position float:x de la balle
-et de sa vitesse float:vx sur l'axe des abscisses *)
-let bounce_x x vx =
+(* Calcul de la vitesse sur l'axe des abscisses en fonction 
+position (float:x,float:y) de la balle, sa vitesse float:vx
+et position int:p de la raquette *)
+let bounce_x x y vx p =
+  let middle_paddle = float_of_int p +. (float_of_int paddle /. 2.) in
   if x -. left <= float_of_int ball || x +. float_of_int ball >= (right -. 1.) then -.vx
+  (* Gestion de la trajectoire à la raquette *)
+  else if y -. float_of_int ball <= down +. float_of_int thick then
+  (
+    if float_of_int p <= x && x <= middle_paddle then -.(abs_float vx)
+    else if middle_paddle <= x && x <= float_of_int (p + paddle) then (abs_float vx)
+    else vx
+  )
   else vx
 
-(* Calcul de la vitesse en fonction de la position (float:x,float:y)
-de la balle, de la vitesse float:vy et de la position int:p de la
-raquette sur l'axe des ordonnées *)
+(* Calcul de la vitesse sur l'axe des ordonnées en fonction 
+position (float:x,float:y) de la balle, sa vitesse float:vy
+et position int:p de la raquette *)
 let bounce_y x y vy p =
-  if y +. float_of_int ball >= (up -. 1.) || (y -. float_of_int ball <= (down +. (float_of_int thick)) && float_of_int p <= x && x <= float_of_int (p + paddle))  then -.vy
+  if y +. float_of_int ball >= (up -. 1.) || (y -. float_of_int ball <= down +. float_of_int thick && float_of_int p <= x && x <= float_of_int (p + paddle))  then -.vy
   else vy
 
 (* Longueur d'une brique *)
@@ -271,9 +280,10 @@ let game () =
     
     (* Effets sur la balle tant que le jeu n'est pas perdu *)
     if not (is_lost x y) then
+      let p = position_paddle () in
       (* Calcul du rebond raquette et bordures *)
-      let vx = bounce_x x vx in
-      let vy = bounce_y x y vy (position_paddle ()) in
+      let vx = bounce_x x y vx p in
+      let vy = bounce_y x y vy p in
       (* Mise à jour de la liste de briques *)
       let (bricks, side) = update_bricks x y bricks in
       (* Incrémentation du score *)
@@ -286,7 +296,7 @@ let game () =
       let y = new_position_y y vy in
       
       (* Vitesse des frames *)
-      Unix.sleepf 0.001;
+      Unix.sleepf 0.0005;
       (* Appel récursif *)
       game x y vx vy bricks score
   in

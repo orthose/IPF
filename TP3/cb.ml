@@ -18,6 +18,9 @@ let () =
 (* Rayon de la balle *)
 let ball = 5
 
+(* Initialisation du Random en fonction du temps *)
+let () = Random.init (int_of_float (Unix.time ()))
+
 (* Vitesse initiale de la balle *)
 let vx = Random.float 1.0
 let vy = Random.float 1.0
@@ -175,7 +178,7 @@ let reaches_brick x y brick =
      ((brick.brick_x <= ball_x_inf && ball_x_inf <= brick.brick_x +. brick_right) ||
       (brick.brick_x <= ball_x_sup && ball_x_sup <= brick.brick_x +. brick_right)) &&
      ((distance_min <= brick.brick_y -. ball_y_sup && brick.brick_y -. ball_y_sup <= distance_max) ||
-      (distance_min <= ball_y_inf -. brick.brick_y +. brick_up && ball_y_inf -. brick.brick_y +. brick_up <= distance_max))
+      (distance_min <= ball_y_inf -. (brick.brick_y +. brick_up) && ball_y_inf -. (brick.brick_y +. brick_up) <= distance_max))
      then Horizontal
          
    (* Côté vertical gauche et droite *) 
@@ -183,7 +186,7 @@ let reaches_brick x y brick =
       ((brick.brick_y <= ball_y_inf && ball_y_inf <= brick.brick_y +. brick_up) ||
        (brick.brick_y <= ball_y_sup && ball_y_sup <= brick.brick_y +. brick_up)) &&
       ((distance_min <= brick.brick_x -. ball_x_sup && brick.brick_x -. ball_x_sup <= distance_max) ||
-       (distance_min <= ball_x_inf -. brick.brick_x +. brick_right && ball_x_inf -. brick.brick_x +. brick_right <= distance_max))
+       (distance_min <= ball_x_inf -. (brick.brick_x +. brick_right) && ball_x_inf -. (brick.brick_x +. brick_right) <= distance_max))
       then Vertical
 
   (* Aucune face touchée *)

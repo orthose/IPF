@@ -84,10 +84,10 @@ let bounce_y x y vy p =
   else vy
 
 (* Longueur d'une brique *)
-let brick_right = right /. 10.
+let brick_right = floor (right /. 10.)
 
 (* Epaisseur d'une brique *)
-let brick_up = up /. 30.
+let brick_up = floor (up /. 30.)
 
 (* Nombre de colones de briques *)
 let brick_column = int_of_float (right /. brick_right)
@@ -99,7 +99,7 @@ let brick_lines = 15
 let first_brick_x = 0.
 
 (* Coordonnée y de la première brique *)
-let first_brick_y = up /. 3.
+let first_brick_y = floor (up /. 3.)
                   
 (* Résistance d'une brique *)
 let brick_resistance = 3

@@ -1,0 +1,8 @@
+type rps = Pierre | Papier | Ciseaux
+type jeu = Gagnant of rps | Nul
+
+let qui_gagne (a,b) =
+  match (a,b) with
+  | (Pierre,Papier) -> Gagnant(Papier)
+  | (Pierre,Ciseaux) -> Gagnant(Pierre)
+  | ()
